@@ -19,8 +19,8 @@ jobs:
       # 配置 Git 用户信息
       - name: Set Up Git
         run: |
-          git config user.name "${{ github.actor || 'default-user' }}" # Use the GitHub actor or a fallback
-          git config user.email "${{ github.actor || 'default-user' }}@users.noreply.github.com" # Use a fallback email
+          git config user.name "${{ secrets.GITHUB_ACTOR || 'GitHub Actions Bot' }}" # 设置默认用户名
+          git config user.email "${{ secrets.GITHUB_ACTOR || 'github-actions' }}@users.noreply.github.com" # 设置默认邮箱
 
       # 添加上游仓库
       - name: Add Upstream Repository
@@ -30,9 +30,9 @@ jobs:
       - name: Fetch Upstream Changes
         run: git fetch upstream
 
-      # 合并上游仓库的更改
+      # 合并上游仓库的更改，跳过冲突
       - name: Merge Upstream Changes
-        run: git merge upstream/main --allow-unrelated-histories # 添加允许合并不相关历史的标志
+        run: git merge upstream/main --strategy-option theirs # 自动选择上游更改
 
       # 推送更改到 Fork 仓库
       - name: Push Changes to Fork Repository
