@@ -7,29 +7,35 @@ on:
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # 使用最新的 Ubuntu 环境运行
 
     steps:
+      # 检出当前 Fork 仓库的代码
       - name: Checkout Fork Repository
         uses: actions/checkout@v3
         with:
           ref: main # 替换为你的主分支名称
 
+      # 配置 Git 用户信息
       - name: Set Up Git
         run: |
-          git config user.name "${{ secrets.GITHUB_ACTOR }}"
-          git config user.email "${{ secrets.GITHUB_ACTOR }}@users.noreply.github.com"
+          git config user.name "${{ secrets.GITHUB_ACTOR }}" # 使用当前 GitHub 用户名
+          git config user.email "${{ secrets.GITHUB_ACTOR }}@users.noreply.github.com" # 使用保密电子邮件地址
 
+      # 添加上游仓库
       - name: Add Upstream Repository
         run: git remote add upstream https://github.com/bestZwei/LibreTV.git # 上游仓库地址
 
+      # 获取上游仓库的更新
       - name: Fetch Upstream Changes
         run: git fetch upstream
 
+      # 合并上游仓库的更改
       - name: Merge Upstream Changes
         run: git merge upstream/main --allow-unrelated-histories # 添加允许合并不相关历史的标志
 
+      # 推送更改到 Fork 仓库
       - name: Push Changes to Fork Repository
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的 Token 进行认证
         run: git push origin main # 替换为你的主分支名称
