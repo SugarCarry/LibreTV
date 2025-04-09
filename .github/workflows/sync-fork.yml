@@ -1,41 +1,58 @@
-name: Sync Fork
+name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天 UTC 时间 00:00 自动运行一次
-  workflow_dispatch: # 手动触发工作流
+    - cron: '0 0 * * *' # 每天 UTC 时间 00:00 运行一次
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   sync:
-    runs-on: ubuntu-latest # 使用最新的 Ubuntu 环境运行
-
+    runs-on: ubuntu-latest
     steps:
-      # 检出当前 Fork 仓库的代码
-      - name: Checkout Fork Repository
-        uses: actions/checkout@v3
+      - name: Checkout Fork
+        uses: actions/checkout@v4
         with:
-          ref: main # 替换为你的主分支名称
+          # 使用 GITHUB_TOKEN 拉取，需要确保 workflow 有写入权限
+          # 或者使用 personal access token (PAT)
+          # ref: main # 如果你的默认分支不是 main，请修改
+          fetch-depth: 0 # 获取所有历史记录，以便合并
 
-      # 配置 Git 用户信息
-      - name: Set Up Git
+      - name: Set up Git
         run: |
-          git config user.name "${{ secrets.GITHUB_ACTOR || 'GitHub Actions Bot' }}" # 设置默认用户名
-          git config user.email "${{ secrets.GITHUB_ACTOR || 'github-actions' }}@users.noreply.github.com" # 设置默认邮箱
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-      # 添加上游仓库
-      - name: Add Upstream Repository
-        run: git remote add upstream https://github.com/bestZwei/LibreTV.git # 上游仓库地址
+      - name: Add Upstream Remote
+        run: git remote add upstream https://github.com/bestZwei/LibreTV.git
 
-      # 获取上游仓库的更新
-      - name: Fetch Upstream Changes
+      - name: Fetch Upstream
         run: git fetch upstream
 
-      # 合并上游仓库的更改，跳过冲突
-      - name: Merge Upstream Changes
-        run: git merge upstream/main --strategy-option theirs # 自动选择上游更改
+      - name: Sync main Branch (or your default branch)
+        run: |
+          # 切换到你的默认分支 (例如 main 或 master)
+          # 如果你的默认分支不是 main，请修改下面的 'main'
+          DEFAULT_BRANCH="main" 
+          git checkout $DEFAULT_BRANCH
 
-      # 推送更改到 Fork 仓库
-      - name: Push Changes to Fork Repository
+          # 尝试合并上游的对应分支
+          # 如果上游仓库的默认分支不是 main，也请修改下面的 'upstream/main'
+          UPSTREAM_BRANCH="main" 
+          git merge upstream/$UPSTREAM_BRANCH
+
+          # 如果你想使用 rebase 而不是 merge (请注意 rebase 会改写历史)
+          # git rebase upstream/$UPSTREAM_BRANCH
+
+      - name: Push Changes
+        run: |
+          # 将更新推送到你的 fork
+          # 如果你的默认分支不是 main，请修改下面的 'main'
+          DEFAULT_BRANCH="main" 
+          git push origin $DEFAULT_BRANCH
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的 Token 进行认证
-        run: git push origin main # 替换为你的主分支名称
+          # 使用 GITHUB_TOKEN 推送需要 workflow 有写入权限
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 如果 GITHUB_TOKEN 权限不足，或者你想用特定用户推送，
+          # 可以创建一个 Personal Access Token (PAT) 并存储在仓库的 Secrets 中
+          # 例如，创建一个名为 SYNC_PAT 的 secret，然后取消下面的注释并注释掉上面的 GITHUB_TOKEN
+          # GITHUB_TOKEN: ${{ secrets.SYNC_PAT }}
