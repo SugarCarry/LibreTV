@@ -27,7 +27,7 @@ jobs:
         run: git fetch upstream
 
       - name: Merge Upstream Changes
-        run: git merge upstream/main # 替换为上游的主分支名称
+        run: git merge upstream/main --allow-unrelated-histories # 添加允许合并不相关历史的标志
 
       - name: Push Changes to Fork Repository
         env:
