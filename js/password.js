@@ -21,7 +21,7 @@ function isPasswordVerified() {
             return true;
         }
 
-        const verificationData = JSON.parse(localStorage.getItem(PASSWORD_CONFIG.localStorageKey) || '{admin}');
+        const verificationData = JSON.parse(localStorage.getItem(PASSWORD_CONFIG.localStorageKey) || '{}');
         const { verified, timestamp } = verificationData;
         
         // 验证是否已验证且未过期
