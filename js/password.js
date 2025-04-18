@@ -21,7 +21,7 @@ function isPasswordVerified() {
             return true;
         }
 
-        const verificationData = JSON.parse(localStorage.getItem(PASSWORD_CONFIG.localStorageKey) || '{}');
+        const verificationData = JSON.parse(localStorage.getItem(PASSWORD_CONFIG.localStorageKey) || '{admin}');
         const { verified, timestamp } = verificationData;
         
         // 验证是否已验证且未过期
@@ -43,7 +43,7 @@ function isPasswordVerified() {
  */
 function verifyPassword(password) {
     // 检查密码是否匹配环境变量中设置的密码
-    const correctPassword = window.__ENV__ && window.__ENV__.PASSWORD;|| 'admin';
+    const correctPassword = window.__ENV__ && window.__ENV__.PASSWORD;
     const isValid = password === correctPassword;
     
     if (isValid) {
