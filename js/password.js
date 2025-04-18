@@ -43,7 +43,7 @@ function isPasswordVerified() {
  */
 function verifyPassword(password) {
     // 检查密码是否匹配环境变量中设置的密码
-    const correctPassword = window.__ENV__ && window.__ENV__.PASSWORD;
+    const correctPassword = window.__ENV__ && window.__ENV__.PASSWORD;|| 'admin';
     const isValid = password === correctPassword;
     
     if (isValid) {
