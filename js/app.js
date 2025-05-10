@@ -1,5 +1,5 @@
 // 全局变量
-let selectedAPIs = JSON.parse(localStorage.getItem('selectedAPIs') || '["heimuer", "ffzy", "dyttzy", "tyyszy", "ckzy", "zy360", "wolong", "hwba", "jisu", "dbzy", "bfzy", "mozhua", "mdzy", "ruyi", "jkun", "bwzy", "souav", "r155", "lsb", "huangcang", "zuid", "yutu","yinghua","baidu","wujin"]'); // 默认选中黑木耳和豆瓣资源
+let selectedAPIs = JSON.parse(localStorage.getItem('selectedAPIs') || '["heimuer", "ffzy", "dyttzy", "tyyszy", "ckzy", "ikun", "wwzy", "zy360", "wolong", "hwba", "jisu", "dbzy", "bfzy", "mozhua", "mdzy", "ruyi", "jkun", "bwzy", "souav", "r155", "lsb", "huangcang", "zuid", "yutu","yinghua","baidu","wujin"]'); // 默认选中黑木耳和豆瓣资源
 let customAPIs = JSON.parse(localStorage.getItem('customAPIs') || '[]'); // 存储自定义API列表
 
 // 添加当前播放的集数索引
@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 设置默认API选择（如果是第一次加载）
     if (!localStorage.getItem('hasInitializedDefaults')) {
         // 仅选择天涯资源、暴风资源和如意资源
-        selectedAPIs = ["heimuer", "ffzy", "dyttzy", "tyyszy", "ckzy", "zy360", "wolong", "hwba", "jisu", "dbzy", "bfzy", "mozhua", "mdzy", "ruyi", "jkun", "bwzy", "souav", "r155", "lsb", "huangcang", "zuid", "yutu","yinghua","baidu","wujin"];
+        selectedAPIs = ["heimuer", "ffzy", "dyttzy", "tyyszy", "ckzy", "ikun", "wwzy", "zy360", "wolong", "hwba", "jisu", "dbzy", "bfzy", "mozhua", "mdzy", "ruyi", "jkun", "bwzy", "souav", "r155", "lsb", "huangcang", "zuid", "yutu","yinghua","baidu","wujin"];
         localStorage.setItem('selectedAPIs', JSON.stringify(selectedAPIs));
         
         // 默认选中过滤开关
