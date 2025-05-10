@@ -21,15 +21,19 @@ const SITE_CONFIG = {
 
 // API站点配置
 const API_SITES = {
+    dyttzy: {
+        api: 'http://caiji.dyttzyapi.com',
+        name: '电影天堂资源',
+        detail: 'http://caiji.dyttzyapi.com',
+    },
+    dbzy: {
+        api: 'https://dbzy.com',
+        name: '豆瓣资源',
+    },
     heimuer: {
         api: 'https://json.heimuer.xyz',
         name: '黑木耳',
         detail: 'https://heimuer.tv',
-    },
-        dyttzy: {
-        api: 'http://caiji.dyttzyapi.com',
-        name: '电影天堂资源',
-        detail: 'http://caiji.dyttzyapi.com',
     },
     ffzy: {
         api: 'http://ffzy5.tv',
@@ -53,6 +57,11 @@ const API_SITES = {
         api: 'https://wolongzyw.com',
         name: '卧龙资源',
     },
+        huya: {
+        api: 'https://www.huyaapi.com',
+        name: '虎牙资源',
+        detail: 'https://www.huyaapi.com',
+    },
     hwba: {
         api: 'https://cjhwba.com',
         name: '华为吧资源',
@@ -61,10 +70,6 @@ const API_SITES = {
         api: 'https://jszyapi.com',
         name: '极速资源',
         detail: 'https://jszyapi.com'
-    },
-    dbzy: {
-        api: 'https://dbzy.com',
-        name: '豆瓣资源',
     },
     bfzy: {
         api: 'https://bfzyapi.com',
