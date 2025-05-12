@@ -30,6 +30,10 @@ const API_SITES = {
         api: 'https://dbzy.com',
         name: '豆瓣资源',
     },
+    xiaomaomi: {
+        api: 'https://zy.xiaomaomi.cc',
+        name: '小猫咪资源',
+    },
     heimuer: {
         api: 'https://json.heimuer.xyz',
         name: '黑木耳',
