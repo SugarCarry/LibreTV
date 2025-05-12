@@ -831,8 +831,7 @@ async function search() {
                 </div>
             `;
         }).join('');
-
-        
+  
         resultsDiv.innerHTML = safeResults;
     } catch (error) {
         console.error('搜索错误:', error);
