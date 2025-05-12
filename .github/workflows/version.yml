@@ -1,35 +1,41 @@
-name: Bump version
+name: Bump version # 工作流程的名称
 
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main # 在推送到 main 分支时触发
+    # 添加 paths-ignore 以防止工作流程自身的提交触发新的运行
+    # 这个工作流程只修改 VERSION.txt，所以忽略 VERSION.txt 的更改可以防止无限循环
+    paths-ignore:
+      - 'VERSION.txt'
+  workflow_dispatch: # 允许从 GitHub Actions 界面手动触发
 
 jobs:
   bump-version:
-    if: github.repository == 'LibreSpark/LibreTV'
-    runs-on: ubuntu-latest
+    # 确保这个 Job 只在你的仓库中运行
+    if: github.repository == 'SugarCarry/LibreTV'
+    runs-on: ubuntu-latest # 在 Ubuntu 最新版本上运行 Job
     env:
-      TZ: 'Asia/Shanghai'
+      TZ: 'Asia/Shanghai' # 设置时区
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Bump version and commit changes
-      run: |
-        CURRENT_TIME=$(date +"%Y-%m-%d %H:%M")
-        git config user.name 'github-actions[bot]'
-        git config user.email 'github-actions[bot]@users.noreply.github.com'
-        echo $(date +"%Y%m%d%H%M") > VERSION.txt
-        git add VERSION.txt
-        git commit -m "Auto Update $CURRENT_TIME"
-        git push origin main
+    - name: Checkout repository # 步骤名称：拉取仓库代码
+      uses: actions/checkout@v4 # 使用 actions/checkout Action v4 版本
 
-    - name: Delete workflow runs
-      uses: Mattraks/delete-workflow-runs@main
+    - name: Bump version and commit changes # 步骤名称：更新版本并提交更改
+      run: | # 执行以下脚本
+        CURRENT_TIME=$(date +"%Y-%m-%d %H:%M") # 获取当前日期和时间
+        git config user.name 'github-actions[bot]' # 配置 Git 用户名为机器人
+        git config user.email 'github-actions[bot]@users.noreply.github.com' # 配置 Git 用户邮箱为机器人邮箱
+        echo $(date +"%Y%m%d%H%M") > VERSION.txt # 将 YYYYMMDDHHMM 格式的日期时间写入 VERSION.txt 文件
+        git add VERSION.txt # 将 VERSION.txt 文件添加到 Git 暂存区
+        git commit -m "Auto Update $CURRENT_TIME" # 提交更改，提交信息包含日期时间
+        git push origin main # 将更改推送到 origin (你的 fork) 的 main 分支
+
+    - name: Delete workflow runs # 步骤名称：删除旧的工作流程运行记录
+      uses: Mattraks/delete-workflow-runs@main # 使用 Mattraks/delete-workflow-runs Action
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        repository: ${{ github.repository }}
-        retain_days: 0
-        keep_minimum_runs: 2
+        token: ${{ secrets.GITHUB_TOKEN }} # 使用 GitHub 提供的 GITHUB_TOKEN 进行认证
+        repository: ${{ github.repository }} # 指定操作的仓库（当前仓库）
+        retain_days: 0 # 保留天数为 0，即删除所有旧的运行记录
+        keep_minimum_runs: 2 # 最少保留最近的 2 次运行记录
