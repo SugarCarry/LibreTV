@@ -26,6 +26,18 @@ const API_SITES = {
         name: '电影天堂资源',
         detail: 'http://caiji.dyttzyapi.com',
     },
+    ruyi: {
+        api: 'https://cj.rycjapi.com',
+        name: '如意资源',
+    },
+    tyyszy: {
+        api: 'https://tyyszy.com',
+        name: '天涯资源',
+    },
+    bfzy: {
+        api: 'https://bfzyapi.com',
+        name: '暴风资源',
+    },
     dbzy: {
         api: 'https://dbzy.com',
         name: '豆瓣资源',
@@ -43,10 +55,6 @@ const API_SITES = {
         api: 'http://ffzy5.tv',
         name: '非凡影视',
         detail: 'http://ffzy5.tv',
-    },
-    tyyszy: {
-        api: 'https://tyyszy.com',
-        name: '天涯资源',
     },
     ckzy: {
         api: 'https://www.ckzy1.com',
@@ -75,10 +83,6 @@ const API_SITES = {
         name: '极速资源',
         detail: 'https://jszyapi.com'
     },
-    bfzy: {
-        api: 'https://bfzyapi.com',
-        name: '暴风资源',
-    },
     mozhua: {
         api: 'https://mozhuazy.com',
         name: '魔爪资源',
@@ -86,10 +90,6 @@ const API_SITES = {
     mdzy: {
         api: 'https://www.mdzyapi.com',
         name: '魔都资源',
-    },
-    ruyi: {
-        api: 'https://cj.rycjapi.com',
-        name: '如意资源',
     },
     jkun: {
         api: 'https://jkunzyapi.com',
