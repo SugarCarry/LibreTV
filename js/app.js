@@ -428,7 +428,7 @@ function addCustomApi() {
     const newApiIndex = customAPIs.length - 1;
     selectedAPIs.push('custom_' + newApiIndex);
     localStorage.setItem('selectedAPIs', JSON.stringify(selectedAPIs));
-
+    
     // 重新渲染自定义API列表
     renderCustomAPIsList();
     updateSelectedApiCount();
@@ -489,13 +489,26 @@ function setupEventListeners() {
         }
     });
 
-    // 点击外部关闭设置面板
+    // 点击外部关闭设置面板和历史记录面板
     document.addEventListener('click', function(e) {
-        const panel = document.getElementById('settingsPanel');
-        const settingsButton = document.querySelector('button[onclick="toggleSettings(event)"]');
+        // 关闭设置面板
+        const settingsPanel = document.querySelector('#settingsPanel.show');
+        const settingsButton = document.querySelector('#settingsPanel .close-btn');
         
-        if (!panel.contains(e.target) && !settingsButton.contains(e.target) && panel.classList.contains('show')) {
-            panel.classList.remove('show');
+        if (settingsPanel && settingsButton && 
+            !settingsPanel.contains(e.target) && 
+            !settingsButton.contains(e.target)) {
+            settingsPanel.classList.remove('show');
+        }
+
+        // 关闭历史记录面板
+        const historyPanel = document.querySelector('#historyPanel.show');
+        const historyButton = document.querySelector('#historyPanel .close-btn');
+        
+        if (historyPanel && historyButton && 
+            !historyPanel.contains(e.target) && 
+            !historyButton.contains(e.target)) {
+            historyPanel.classList.remove('show');
         }
     });
     
@@ -561,7 +574,7 @@ function getCustomApiInfo(customApiIndex) {
     return customAPIs[index];
 }
 
-// 搜索功能 - 修改为支持多选API
+// 搜索功能 - 修改为支持多选API和多页结果
 async function search() {
     // 密码保护校验
     if (window.isPasswordProtected && window.isPasswordVerified) {
@@ -631,7 +644,7 @@ async function search() {
                 if (!data || !data.list || !Array.isArray(data.list) || data.list.length === 0) {
                     return [];
                 }
-
+                
                 // 处理第一页结果
                 const results = data.list.map(item => ({
                     ...item,
@@ -639,7 +652,7 @@ async function search() {
                     source_code: apiId,
                     api_url: apiId.startsWith('custom_') ? getCustomApiInfo(apiId.replace('custom_', ''))?.url : undefined
                 }));
-
+                
                 // 获取总页数
                 const pageCount = data.pagecount || 1;
                 // 确定需要获取的额外页数 (最多获取maxPages页)
@@ -831,7 +844,7 @@ async function search() {
                 </div>
             `;
         }).join('');
-  
+        
         resultsDiv.innerHTML = safeResults;
     } catch (error) {
         console.error('搜索错误:', error);
@@ -1002,9 +1015,28 @@ function playVideo(url, vod_name, sourceCode, episodeIndex = 0) {
     
     // 构建播放页面URL，传递必要参数
     const playerUrl = `player.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(videoTitle)}&index=${episodeIndex}&source=${encodeURIComponent(sourceName)}&source_code=${encodeURIComponent(sourceCode)}`;
-    
-    // 在新标签页中打开播放页面
-    window.location.href = playerUrl; 
+    showVideoPlayer(playerUrl);
+}
+
+// 弹出播放器页面
+function showVideoPlayer(url) {
+    // 临时隐藏搜索结果，防止高度超出播放器而出现滚动条
+    document.getElementById('resultsArea').classList.add('hidden');
+    // 在框架中打开播放页面
+    videoPlayerFrame = document.createElement('iframe');
+    videoPlayerFrame.id = 'VideoPlayerFrame';
+    videoPlayerFrame.className = 'fixed w-full h-screen z-40';
+    videoPlayerFrame.src = url;
+    document.body.appendChild(videoPlayerFrame);
+}
+
+// 关闭播放器页面
+function closeVideoPlayer() {
+    videoPlayerFrame = document.getElementById('VideoPlayerFrame');
+    if (videoPlayerFrame) {
+        videoPlayerFrame.remove();
+        document.getElementById('resultsArea').classList.remove('hidden');
+    }
 }
 
 // 播放上一集
@@ -1123,12 +1155,34 @@ async function importConfig() {
 async function exportConfig() {
     // 存储配置数据
     const config = {};
-
-    // 读取全部 localStorage 项
     const items = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        items[key] = localStorage.getItem(key);
+
+    const settingsToExport = [
+        'selectedAPIs',
+        'customAPIs',
+        'yellowFilterEnabled',
+        'adFilteringEnabled',
+        'doubanEnabled',
+        'hasInitializedDefaults'
+    ];
+
+    // 导出设置项
+    settingsToExport.forEach(key => {
+        const value = localStorage.getItem(key);
+        if (value !== null) {
+            items[key] = value;
+        }
+    });
+
+    // 导出历史记录
+    const viewingHistory = localStorage.getItem('viewingHistory');
+    if (viewingHistory) {
+        items['viewingHistory'] = viewingHistory;
+    }
+
+    const searchHistory = localStorage.getItem(SEARCH_HISTORY_KEY);
+    if (searchHistory) {
+        items[SEARCH_HISTORY_KEY] = searchHistory;
     }
 
     const times = Date.now().toString();
