@@ -234,7 +234,7 @@ function initializePageContent() {
     }
 
     // 设置页面标题
-    document.title = currentVideoTitle + ' - BestTV播放器';
+    document.title = currentVideoTitle + ' - LibreTV播放器';
     document.getElementById('videoTitle').textContent = currentVideoTitle;
 
     // 初始化播放器
@@ -398,7 +398,7 @@ function initPlayer(videoUrl, sourceCode) {
         chromecast: true,                // 启用Chromecast投屏功能
         contextmenu: [                   // 自定义右键菜单
             {
-                text: '关于 BestTV',
+                text: '关于 LibreTV',
                 link: 'https://github.com/LibreSpark/LibreTV'
             },
             {
@@ -407,7 +407,7 @@ function initPlayer(videoUrl, sourceCode) {
                     window.open('https://github.com/LibreSpark/LibreTV/issues', '_blank');
                 }
             }
-        ],  
+        ],
         video: {
             url: videoUrl,
             type: 'hls',
@@ -455,9 +455,17 @@ function initPlayer(videoUrl, sourceCode) {
                     hls.attachMedia(video);
                     
                     // enable airplay, from https://github.com/video-dev/hls.js/issues/5989
-                    const source = document.createElement('source');
-                    source.src = videoUrl;
-                    video.appendChild(source);
+                    // 检查是否已存在source元素，如果存在则更新，不存在则创建
+                    let sourceElement = video.querySelector('source');
+                    if (sourceElement) {
+                        // 更新现有source元素的URL
+                        sourceElement.src = videoUrl;
+                    } else {
+                        // 创建新的source元素
+                        sourceElement = document.createElement('source');
+                        sourceElement.src = videoUrl;
+                        video.appendChild(sourceElement);
+                    }
                     video.disableRemotePlayback = false;
                     
                     hls.on(Hls.Events.MANIFEST_PARSED, function() {
@@ -906,10 +914,15 @@ function playEpisode(index) {
     // 更新播放器
     if (dp) {
         try {
+            if (dp.video) {
+                const sources = dp.video.querySelectorAll('source');
+                sources.forEach(source => source.src = url);
+            }
+
             dp.switchVideo({
                 url: url,
                 type: 'hls'
-            });
+            })
             
             // 确保播放开始
             const playPromise = dp.play();
