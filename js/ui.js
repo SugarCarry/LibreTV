@@ -1,12 +1,5 @@
 // UI相关函数
 function toggleSettings(e) {
-    // 密码保护校验
-    if (window.isPasswordProtected && window.isPasswordVerified) {
-        if (window.isPasswordProtected() && !window.isPasswordVerified()) {
-            showPasswordModal && showPasswordModal();
-            return;
-        }
-    }
     // 阻止事件冒泡，防止触发document的点击事件
     e && e.stopPropagation();
     const panel = document.getElementById('settingsPanel');
@@ -744,6 +737,17 @@ function clearLocalStorage() {
         // 清除所有localStorage数据
         localStorage.clear();
         
+        // 恢复豆瓣热门推荐开关为默认开启
+        localStorage.setItem('doubanEnabled', 'true');
+        const doubanToggle = document.getElementById('doubanToggle');
+        if (doubanToggle) {
+            doubanToggle.checked = true;
+        }
+        // 立即刷新豆瓣内容显示
+        if (typeof updateDoubanVisibility === 'function') {
+            updateDoubanVisibility();
+        }
+
         // 清除所有cookie
         const cookies = document.cookie.split(";");
         for (let i = 0; i < cookies.length; i++) {
