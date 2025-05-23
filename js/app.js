@@ -42,7 +42,19 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem('hasInitializedDefaults', 'true');
     }
     
-    // 设置黄色内容过滤开关初始状态
+    // 强制安全：如果过滤关闭但未通过密码，自动恢复为开启
+    if (
+        localStorage.getItem('yellowFilterEnabled') === 'false' &&
+        window.isPasswordProtected && window.isPasswordProtected() &&
+        (!window.isPasswordVerified || !window.isPasswordVerified())
+    ) {
+        localStorage.setItem('yellowFilterEnabled', 'true');
+        const yellowFilterToggle = document.getElementById('yellowFilterToggle');
+        if (yellowFilterToggle) yellowFilterToggle.checked = true;
+    }
+
+    // 设置黄色内容过滤开关初始状态为关闭状态
+
     const yellowFilterToggle = document.getElementById('yellowFilterToggle');
     if (yellowFilterToggle) {
         yellowFilterToggle.checked = localStorage.getItem('yellowFilterEnabled') === 'true';
@@ -59,6 +71,36 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始检查成人API选中状态
     setTimeout(checkAdultAPIsSelected, 100);
+
+    function enforceYellowFilterIfNeeded() {
+        if (
+            localStorage.getItem('yellowFilterEnabled') === 'false' &&
+            window.isPasswordProtected && window.isPasswordProtected() &&
+            (!window.isPasswordVerified || !window.isPasswordVerified())
+        ) {
+            localStorage.setItem('yellowFilterEnabled', 'true');
+            const yellowFilterToggle = document.getElementById('yellowFilterToggle');
+            if (yellowFilterToggle) yellowFilterToggle.checked = true;
+        }
+    }
+    if (typeof window.isPasswordVerified === 'function') {
+        enforceYellowFilterIfNeeded();
+    } else {
+        setTimeout(enforceYellowFilterIfNeeded, 100);
+    }
+
+    // 终极保险：在初始化最后再强制一次
+    setTimeout(() => {
+        if (
+            localStorage.getItem('yellowFilterEnabled') === 'false' &&
+            window.isPasswordProtected && window.isPasswordProtected() &&
+            (!window.isPasswordVerified || !window.isPasswordVerified())
+        ) {
+            localStorage.setItem('yellowFilterEnabled', 'true');
+            const yellowFilterToggle = document.getElementById('yellowFilterToggle');
+            if (yellowFilterToggle) yellowFilterToggle.checked = true;
+        }
+    }, 500);
 });
 
 // 初始化API复选框
@@ -110,8 +152,12 @@ function initAPICheckboxes() {
 
 // 添加成人API列表
 function addAdultAPI() {
-    // 仅在隐藏设置为false时添加成人API组
-    if (!HIDE_BUILTIN_ADULT_APIS && (localStorage.getItem('yellowFilterEnabled') === 'false')) {
+    // 仅在隐藏设置为false、黄色内容过滤关闭且密码已验证时添加成人API组
+    if (
+        !HIDE_BUILTIN_ADULT_APIS &&
+        localStorage.getItem('yellowFilterEnabled') === 'false' &&
+        window.isPasswordVerified && window.isPasswordVerified()
+    ) {
         const container = document.getElementById('apiCheckboxes');
 
         // 添加成人API组标题
@@ -122,7 +168,7 @@ function addAdultAPI() {
         adultTitle.className = 'api-group-title adult';
         adultTitle.innerHTML = `黄色资源采集站 <span class="adult-warning">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77-1.333.192 3 1.732 3z" />
             </svg>
         </span>`;
         adultdiv.appendChild(adultTitle);
@@ -347,7 +393,7 @@ function updateSelectedAPIs() {
     selectedAPIs = [...builtInApis, ...customApiIndices];
     
     // 保存到localStorage
-    localStorage.setItem('selectedAPIs', JSON.stringify(selectedAPIs));
+    // localStorage.setItem('selectedAPIs', JSON.stringify(selectedAPIs));
     
     // 更新显示选中的API数量
     updateSelectedApiCount();
@@ -530,6 +576,13 @@ function setupEventListeners() {
                 // 添加成人API列表
                 addAdultAPI();
             }
+
+            // 新增：当关闭过滤（即checked为false）时，若需要密码保护且未验证，则弹出密码输入框
+            if (e.target.checked === false && window.isPasswordProtected && window.isPasswordVerified) {
+                if (window.isPasswordProtected() && !window.isPasswordVerified()) {
+                    showPasswordModal && showPasswordModal();
+                }
+            }
         });
     }
     
@@ -590,12 +643,12 @@ function getCustomApiInfo(customApiIndex) {
 // 搜索功能 - 修改为支持多选API和多页结果
 async function search() {
     // 密码保护校验
-    if (window.isPasswordProtected && window.isPasswordVerified) {
-        if (window.isPasswordProtected() && !window.isPasswordVerified()) {
-            showPasswordModal && showPasswordModal();
-            return;
-        }
-    }
+    // if (window.isPasswordProtected && window.isPasswordVerified) {
+    //     if (window.isPasswordProtected() && !window.isPasswordVerified()) {
+    //         showPasswordModal && showPasswordModal();
+    //         return;
+    //     }
+    // }
     const query = document.getElementById('searchInput').value.trim();
     
     if (!query) {
@@ -1198,118 +1251,6 @@ function toggleEpisodeOrder(sourceCode) {
     }
 }
 
-// 从URL导入配置
-async function importConfigFromUrl() {
-    // 创建模态框元素
-    let modal = document.getElementById('importUrlModal');
-    if (modal) {
-        document.body.removeChild(modal);
-    }
-
-    modal = document.createElement('div');
-    modal.id = 'importUrlModal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-40';
-
-    modal.innerHTML = `
-        <div class="bg-[#191919] rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto relative">
-            <button id="closeUrlModal" class="absolute top-4 right-4 text-gray-400 hover:text-white text-xl">&times;</button>
-            
-            <h3 class="text-xl font-bold mb-4">从URL导入配置</h3>
-            
-            <div class="mb-4">
-                <input type="text" id="configUrl" placeholder="输入配置文件URL" 
-                       class="w-full px-3 py-2 bg-[#222] border border-[#333] rounded-lg text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-            </div>
-            
-            <div class="flex justify-end space-x-2">
-                <button id="confirmUrlImport" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">导入</button>
-                <button id="cancelUrlImport" class="bg-[#444] hover:bg-[#555] text-white px-4 py-2 rounded">取消</button>
-            </div>
-        </div>`;
-
-    document.body.appendChild(modal);
-
-    // 关闭按钮事件
-    document.getElementById('closeUrlModal').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-
-    // 取消按钮事件
-    document.getElementById('cancelUrlImport').addEventListener('click', () => {
-        document.body.removeChild(modal);
-    });
-
-    // 确认导入按钮事件
-    document.getElementById('confirmUrlImport').addEventListener('click', async () => {
-        const url = document.getElementById('configUrl').value.trim();
-        if (!url) {
-            showToast('请输入配置文件URL', 'warning');
-            return;
-        }
-
-        // 验证URL格式
-        try {
-            const urlObj = new URL(url);
-            if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
-                showToast('URL必须以http://或https://开头', 'warning');
-                return;
-            }
-        } catch (e) {
-            showToast('URL格式不正确', 'warning');
-            return;
-        }
-
-        showLoading('正在从URL导入配置...');
-        
-        try {
-            // 获取配置文件 - 直接请求URL
-            const response = await fetch(url, {
-                mode: 'cors',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            if (!response.ok) throw '获取配置文件失败';
-
-            // 验证响应内容类型
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw '响应不是有效的JSON格式';
-            }
-
-            const config = await response.json();
-            if (config.name !== 'BestTV-Settings') throw '配置文件格式不正确';
-
-            // 验证哈希
-            const dataHash = await sha256(JSON.stringify(config.data));
-            if (dataHash !== config.hash) throw '配置文件哈希值不匹配';
-
-            // 导入配置
-            for (let item in config.data) {
-                localStorage.setItem(item, config.data[item]);
-            }
-            
-            showToast('配置文件导入成功，3 秒后自动刷新本页面。', 'success');
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        } catch (error) {
-            const message = typeof error === 'string' ? error : '导入配置失败';
-            showToast(`从URL导入配置出错 (${message})`, 'error');
-        } finally {
-            hideLoading();
-            document.body.removeChild(modal);
-        }
-    });
-
-    // 点击模态框外部关闭
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            document.body.removeChild(modal);
-        }
-    });
-}
-
 // 配置文件导入功能
 async function importConfig() {
     showImportBox(async (file) => {
@@ -1508,4 +1449,14 @@ function saveStringAsFile(content, fileName) {
     window.URL.revokeObjectURL(url);
 }
 
-// 移除Node.js的require语句，因为这是在浏览器环境中运行的
+// app.js 或路由文件中
+const authMiddleware = require('./middleware/auth');
+const config = require('./config');
+
+// 对所有请求启用鉴权（按需调整作用范围）
+if (config.auth.enabled) {
+  app.use(authMiddleware);
+}
+
+// 或者针对特定路由
+app.use('/api', authMiddleware);
