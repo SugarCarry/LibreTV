@@ -66,6 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
         adFilterToggle.checked = localStorage.getItem(PLAYER_CONFIG.adFilteringStorage) !== 'false'; // 默认为true
     }
     
+    // 设置豆瓣热门推荐开关初始状态为开启
+    const doubanToggle = document.getElementById('doubanToggle');
+    if (doubanToggle) {
+        doubanToggle.checked = localStorage.getItem('doubanEnabled') !== 'false'; // 默认为true
+    }
+
     // 设置事件监听器
     setupEventListeners();
     
