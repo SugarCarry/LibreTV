@@ -154,6 +154,12 @@ async function handlePasswordSubmit() {
             passwordInput.value = '';
             passwordInput.focus();
         }
+        // 密码错误，自动恢复黄色内容过滤开关为"打开"
+        const yellowFilterToggle = document.getElementById('yellowFilterToggle');
+        if (yellowFilterToggle) {
+            yellowFilterToggle.checked = true;
+        }
+        localStorage.setItem('yellowFilterEnabled', 'true');
     }
 }
 
@@ -188,4 +194,4 @@ function initPasswordProtection() {
 }
 
 // 在页面加载完成后初始化密码保护
-document.addEventListener('DOMContentLoaded', initPasswordProtection);
+// document.addEventListener('DOMContentLoaded', initPasswordProtection);
