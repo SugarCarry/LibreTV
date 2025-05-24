@@ -41,6 +41,11 @@ body, html {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* Utility class for spinning animation */
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
 .error-container {
     position: absolute;
     top: 0;

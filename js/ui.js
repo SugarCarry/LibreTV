@@ -504,54 +504,145 @@ async function playFromHistory(url, title, episodeIndex, playbackPosition = 0) {
             }
         }
 
+        // Check if we need to refresh episode list based on cache age
+        const shouldRefreshEpisodes = (historyItem) => {
+            if (!historyItem || !historyItem.vod_id || !historyItem.sourceName) {
+                return false;
+            }
+
+            // Always refresh if no episodes cached or episodes cache timestamp is missing
+            if (!historyItem.episodes || !Array.isArray(historyItem.episodes) || !historyItem.episodesCacheTime) {
+                return true;
+            }
+
+            // Refresh if cache is older than 15 minutes (900000 ms) for more aggressive updates
+            const cacheAge = Date.now() - (historyItem.episodesCacheTime || 0);
+            const maxCacheAge = 900000; // 15 minutes
+
+            return cacheAge > maxCacheAge;
+        };
+
           // Attempt to fetch fresh episode list if we have the necessary info
         if (historyItem && historyItem.vod_id && historyItem.sourceName) {
-            // console.log(`[playFromHistory in ui.js] Attempting to fetch details for vod_id: ${historyItem.vod_id}, sourceName: ${historyItem.sourceName}`); // Log 4
-            try {
-                // Construct the API URL for detail fetching
-                // historyItem.sourceName is used as the sourceCode here
-                // Add a cache buster timestamp
-                const timestamp = new Date().getTime();
-                const apiUrl = `/api/detail?id=${encodeURIComponent(historyItem.vod_id)}&source=${encodeURIComponent(historyItem.sourceName)}&_t=${timestamp}`;
-                
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`API request failed with status ${response.status}`);
-                }
-                const videoDetails = await response.json();
+            const needsRefresh = shouldRefreshEpisodes(historyItem);
 
-                if (videoDetails && videoDetails.episodes && videoDetails.episodes.length > 0) {
-                    episodesList = videoDetails.episodes;
-                    // console.log(`成功获取 "${title}" 最新剧集列表:`, episodesList.length, "集");
-                    // Optionally, update the history item in localStorage with the fresh episodes
-                    if (historyItem) {
-                        historyItem.episodes = [...episodesList]; // Deep copy
-                        const history = JSON.parse(historyRaw); // Re-parse to ensure we have the latest version
-                        const idx = history.findIndex(item => item.url === url);
-                        if (idx !== -1) {
-                            history[idx] = { ...history[idx], ...historyItem }; // Merge, ensuring other properties are kept
-                            localStorage.setItem('viewingHistory', JSON.stringify(history));
-                            // console.log("观看历史中的剧集列表已更新。");
+            // console.log(`[playFromHistory in ui.js] Attempting to fetch details for vod_id: ${historyItem.vod_id}, sourceName: ${historyItem.sourceName}, needsRefresh: ${needsRefresh}`); // Log 4
+
+            if (needsRefresh) {
+                try {
+                    // Construct the API URL for detail fetching with retry mechanism
+                    const timestamp = new Date().getTime();
+                    const apiUrl = `/api/detail?id=${encodeURIComponent(historyItem.vod_id)}&source=${encodeURIComponent(historyItem.sourceName)}&_t=${timestamp}`;
+
+                    // Add retry logic for better reliability
+                    let response;
+                    let retryCount = 0;
+                    const maxRetries = 2;
+
+                    while (retryCount <= maxRetries) {
+                        try {
+                            response = await fetch(apiUrl, {
+                                timeout: 10000, // 10 second timeout
+                                headers: {
+                                    'Cache-Control': 'no-cache',
+                                    'Pragma': 'no-cache'
+                                }
+                            });
+
+                            if (response.ok) {
+                                break;
+                            } else if (retryCount === maxRetries) {
+                                throw new Error(`API request failed with status ${response.status} after ${maxRetries} retries`);
+                            }
+                        } catch (fetchErr) {
+                            if (retryCount === maxRetries) {
+                                throw fetchErr;
+                            }
+                            retryCount++;
+                            // Wait before retry (exponential backoff)
+                            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
                         }
                     }
-                } else {
-                    // console.log(`未能获取 "${title}" 的最新剧集列表，或列表为空。将使用已存储的剧集。`);
+
+                    const videoDetails = await response.json();
+
+                    if (videoDetails && videoDetails.episodes && videoDetails.episodes.length > 0) {
+                        episodesList = videoDetails.episodes;
+                        // console.log(`成功获取 "${title}" 最新剧集列表:`, episodesList.length, "集");
+
+                        // Update the history item with fresh episodes and cache timestamp
+                        if (historyItem) {
+                            historyItem.episodes = [...episodesList]; // Deep copy
+                            historyItem.episodesCacheTime = Date.now(); // Add cache timestamp
+                            historyItem.episodesSource = 'fresh'; // Mark as fresh data
+
+                            const history = JSON.parse(historyRaw); // Re-parse to ensure we have the latest version
+                            const idx = history.findIndex(item => item.url === url);
+                            if (idx !== -1) {
+                                history[idx] = { ...history[idx], ...historyItem }; // Merge, ensuring other properties are kept
+                                localStorage.setItem('viewingHistory', JSON.stringify(history));
+                                // console.log("观看历史中的剧集列表已更新。");
+                            }
+                        }
+                    } else {
+                        // console.log(`未能获取 "${title}" 的最新剧集列表，或列表为空。将使用已存储的剧集。`);
+                        // Mark existing episodes as potentially stale
+                        if (historyItem && historyItem.episodes) {
+                            historyItem.episodesSource = 'cached_stale';
+                        }
+                    }
+                } catch (fetchError) {
+                    // console.error(`获取 "${title}" 最新剧集列表失败:`, fetchError, "将使用已存储的剧集。");
+                    // Mark existing episodes as cached due to fetch failure
+                    if (historyItem && historyItem.episodes) {
+                        historyItem.episodesSource = 'cached_error';
+                    }
                 }
-            } catch (fetchError) {
-                // console.error(`获取 "${title}" 最新剧集列表失败:`, fetchError, "将使用已存储的剧集。");
+            } else {
+                // Use cached episodes but mark them as cached
+                if (historyItem && historyItem.episodes) {
+                    historyItem.episodesSource = 'cached';
+                }
             }
         } else if (historyItem) {
             // console.log(`历史记录项 "${title}" 缺少 vod_id 或 sourceName，无法刷新剧集列表。将使用已存储的剧集。`);
+            if (historyItem.episodes) {
+                historyItem.episodesSource = 'cached_no_refresh';
+            }
         }
 
 
         // 如果在历史记录中没找到，尝试使用上一个会话的集数数据
         if (episodesList.length === 0) {
             try {
-                const storedEpisodes = JSON.parse(localStorage.getItem('currentEpisodes') || '[]');
-                if (storedEpisodes.length > 0) {
-                    episodesList = storedEpisodes;
-                    // console.log(`使用localStorage中的集数数据:`, episodesList.length);
+                const storedData = localStorage.getItem('currentEpisodes');
+                if (storedData) {
+                    let parsedData;
+                    try {
+                        parsedData = JSON.parse(storedData);
+                    } catch (parseError) {
+                        console.error('Failed to parse stored episode data:', parseError);
+                        return; // Skip this fallback if parsing fails
+                    }
+
+                    // Handle both old format (array) and new format (object with metadata)
+                    if (Array.isArray(parsedData)) {
+                        // Old format - just an array of episodes
+                        episodesList = parsedData;
+                        // console.log(`使用localStorage中的集数数据 (旧格式):`, episodesList.length);
+                    } else if (parsedData && parsedData.episodes && Array.isArray(parsedData.episodes)) {
+                        // New format - object with metadata
+                        episodesList = parsedData.episodes;
+                        // Check if cached data is too old (older than 30 minutes for fallback)
+                        const cacheAge = Date.now() - (parsedData.cacheTime || 0);
+                        const maxFallbackCacheAge = 1800000; // 30 minutes
+
+                        if (cacheAge > maxFallbackCacheAge) {
+                            // console.log(`localStorage中的集数数据过期 (${Math.round(cacheAge / 60000)}分钟前):`, episodesList.length);
+                        } else {
+                            // console.log(`使用localStorage中的集数数据 (${parsedData.source}, ${Math.round(cacheAge / 60000)}分钟前):`, episodesList.length);
+                        }
+                    }
                 }
             } catch (e) {
                 // console.error('解析currentEpisodes失败:', e);
@@ -560,8 +651,15 @@ async function playFromHistory(url, title, episodeIndex, playbackPosition = 0) {
         
         // 将剧集列表保存到localStorage，播放器页面会读取它
         if (episodesList.length > 0) {
-            localStorage.setItem('currentEpisodes', JSON.stringify(episodesList));
-            // console.log(`已将剧集列表保存到localStorage，共 ${episodesList.length} 集`);
+            const episodeData = {
+                episodes: episodesList,
+                cacheTime: Date.now(),
+                source: historyItem ? historyItem.episodesSource || 'unknown' : 'fallback',
+                vodId: historyItem ? historyItem.vod_id : null,
+                sourceName: historyItem ? historyItem.sourceName : null
+            };
+            localStorage.setItem('currentEpisodes', JSON.stringify(episodeData));
+            // console.log(`已将剧集列表保存到localStorage，共 ${episodesList.length} 集，来源: ${episodeData.source}`);
         }
         
         // 保存当前页面URL作为返回地址
@@ -647,9 +745,9 @@ function addToViewingHistory(videoInfo) {
                 // console.warn(`addToViewingHistory: videoInfo for "${videoInfo.title}" was missing sourceName or vod_id for preferred showIdentifier. Generated fallback: ${videoInfo.showIdentifier}`);
             }
         }
-
-        const existingIndex = history.findIndex(item => 
-            item.title === videoInfo.title && 
+        
+        const existingIndex = history.findIndex(item =>
+            item.title === videoInfo.title &&
             item.sourceName === videoInfo.sourceName &&
             item.showIdentifier === videoInfo.showIdentifier // Strict check using the determined showIdentifier
         );

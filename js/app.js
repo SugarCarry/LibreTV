@@ -133,9 +133,9 @@ function initAPICheckboxes() {
         const checkbox = document.createElement('div');
         checkbox.className = 'flex items-center';
         checkbox.innerHTML = `
-            <input type="checkbox" id="api_${apiKey}" 
-                   class="form-checkbox h-3 w-3 text-blue-600 bg-[#222] border border-[#333]" 
-                   ${checked ? 'checked' : ''} 
+            <input type="checkbox" id="api_${apiKey}"
+                   class="form-checkbox h-3 w-3 text-blue-600 bg-[#222] border border-[#333]"
+                   ${checked ? 'checked' : ''}
                    data-api="${apiKey}">
             <label for="api_${apiKey}" class="ml-1 text-xs text-gray-400 truncate">${api.name}</label>
         `;
@@ -189,9 +189,9 @@ function addAdultAPI() {
             const checkbox = document.createElement('div');
             checkbox.className = 'flex items-center';
             checkbox.innerHTML = `
-                <input type="checkbox" id="api_${apiKey}" 
-                       class="form-checkbox h-3 w-3 text-blue-600 bg-[#222] border border-[#333] api-adult" 
-                       ${checked ? 'checked' : ''} 
+                <input type="checkbox" id="api_${apiKey}"
+                       class="form-checkbox h-3 w-3 text-blue-600 bg-[#222] border border-[#333] api-adult"
+                       ${checked ? 'checked' : ''}
                        data-api="${apiKey}">
                 <label for="api_${apiKey}" class="ml-1 text-xs text-pink-400 truncate">${api.name}</label>
             `;
@@ -278,9 +278,9 @@ function renderCustomAPIsList() {
         const detailLine = api.detail ? `<div class="text-xs text-gray-400 truncate">detail: ${api.detail}</div>` : '';
         apiItem.innerHTML = `
             <div class="flex items-center flex-1 min-w-0">
-                <input type="checkbox" id="custom_api_${index}" 
-                       class="form-checkbox h-3 w-3 text-blue-600 mr-1 ${api.isAdult ? 'api-adult' : ''}" 
-                       ${selectedAPIs.includes('custom_' + index) ? 'checked' : ''} 
+                <input type="checkbox" id="custom_api_${index}"
+                       class="form-checkbox h-3 w-3 text-blue-600 mr-1 ${api.isAdult ? 'api-adult' : ''}"
+                       ${selectedAPIs.includes('custom_' + index) ? 'checked' : ''}
                        data-custom-index="${index}">
                 <div class="flex-1 min-w-0">
                     <div class="text-xs font-medium ${textColorClass} truncate">
@@ -547,8 +547,8 @@ function setupEventListeners() {
         const settingsPanel = document.querySelector('#settingsPanel.show');
         const settingsButton = document.querySelector('#settingsPanel .close-btn');
         
-        if (settingsPanel && settingsButton && 
-            !settingsPanel.contains(e.target) && 
+        if (settingsPanel && settingsButton &&
+            !settingsPanel.contains(e.target) &&
             !settingsButton.contains(e.target)) {
             settingsPanel.classList.remove('show');
         }
@@ -557,8 +557,8 @@ function setupEventListeners() {
         const historyPanel = document.querySelector('#historyPanel.show');
         const historyButton = document.querySelector('#historyPanel .close-btn');
         
-        if (historyPanel && historyButton && 
-            !historyPanel.contains(e.target) && 
+        if (historyPanel && historyButton &&
+            !historyPanel.contains(e.target) &&
             !historyButton.contains(e.target)) {
             historyPanel.classList.remove('show');
         }
@@ -1147,7 +1147,17 @@ function playVideo(url, vod_name, sourceCode, episodeIndex = 0, vodId = '') {
     // 保存当前状态到localStorage
     try {
         localStorage.setItem('currentVideoTitle', vod_name || '未知视频');
-        localStorage.setItem('currentEpisodes', JSON.stringify(currentEpisodes));
+
+        // Save episodes with metadata
+        const episodeData = {
+            episodes: currentEpisodes,
+            cacheTime: Date.now(),
+            source: 'fresh_search',
+            vodId: vodId,
+            sourceName: sourceCode
+        };
+        localStorage.setItem('currentEpisodes', JSON.stringify(episodeData));
+        
         localStorage.setItem('currentEpisodeIndex', episodeIndex);
         localStorage.setItem('currentSourceCode', sourceCode || '');
         localStorage.setItem('lastPlayTime', Date.now());
