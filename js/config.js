@@ -40,7 +40,7 @@ const API_SITES = {
         name: '暴风资源',
     },
     dbzy: {
-        api: 'https://dbzy.com/api.php/provide/vod',
+        api: 'https://dbzy.tv/api.php/provide/vod',
         name: '豆瓣资源',
     },
     // xiaomaomi: {
